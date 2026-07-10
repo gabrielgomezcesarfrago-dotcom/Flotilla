@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B1F3A">
+<title>Control de Flotilla</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<style>
+:root{
+  --navy:#0B1F3A; --navy2:#13294e; --gold:#C9A84C; --gold2:#e0c06e;
+  --teal:#2AA79B; --verde:#27AE60; --amarillo:#E1B12C; --rojo:#C0392B;
+  --gris:#8a93a3; --carta:#ffffff; --tinta:#1c2536;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:linear-gradient(175deg,var(--navy) 0%,var(--navy2) 100%);
+  min-height:100vh; color:#eef1f6;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+header.marca{
+  display:flex;align-items:center;gap:12px;
+  padding:calc(14px + env(safe-area-inset-top)) 18px 12px;
+}
+header.marca .logo{
+  width:42px;height:42px;border-radius:11px;background:var(--navy);
+  border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;
+  color:var(--gold);font-weight:800;font-size:22px;flex:none;
+}
+header.marca h1{font-size:17px;margin:0;letter-spacing:.4px}
+header.marca small{color:var(--gold);font-weight:600;display:block;font-size:11px;letter-spacing:1.2px}
+main{max-width:560px;margin:0 auto;padding:4px 14px 30px}
+.pantalla{display:none}
+.pantalla.activa{display:block;animation:apar .18s ease-out}
+@keyframes apar{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{
+  background:var(--carta);color:var(--tinta);border-radius:15px;
+  padding:16px;margin:12px 0;box-shadow:0 3px 14px rgba(0,0,0,.25);
+}
+.card h2{margin:0 0 4px;font-size:17px;color:var(--navy)}
+.card h3{margin:0 0 8px;font-size:14.5px;color:var(--navy)}
+.card .sub{color:#5c6675;font-size:13px;margin:0 0 12px}
+.btn{
+  display:block;width:100%;padding:14px;border-radius:12px;border:0;
+  font-size:15.5px;font-weight:700;cursor:pointer;margin:8px 0;
+  transition:filter .12s;
+}
+.btn:active{filter:brightness(.9)}
+.btn-oro{background:var(--gold);color:var(--navy)}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-linea{background:transparent;border:1.6px solid var(--gold);color:var(--gold)}
+.btn-linea-navy{background:#fff;border:1.6px solid var(--navy);color:var(--navy)}
+.btn-chico{width:auto;display:inline-block;padding:8px 14px;font-size:13px;margin:4px 4px 4px 0}
+.btn[disabled]{opacity:.55;cursor:default}
+input[type=text],input[type=password],input[type=number],select,textarea{
+  width:100%;padding:12px;border:1.4px solid #ccd3de;border-radius:10px;
+  font-size:15px;margin:5px 0 12px;background:#fbfcfe;color:var(--tinta);
+}
+textarea{min-height:74px;resize:vertical}
+label.eti{font-size:13px;font-weight:700;color:#3b465a;display:block;margin-top:4px}
+.fila-unidad{
+  display:flex;align-items:center;gap:12px;background:#fff;color:var(--tinta);
+  border-radius:13px;padding:13px 14px;margin:8px 0;cursor:pointer;
+  box-shadow:0 2px 9px rgba(0,0,0,.22);border-left:5px solid var(--gold);
+}
+.fila-unidad .cod{
+  font-weight:800;color:var(--navy);font-size:16px;min-width:52px;
+}
+.fila-unidad .des{font-size:13.5px;color:#4a5468}
+.fila-unidad .des b{color:var(--tinta)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.chip{
+  padding:9px 16px;border-radius:20px;border:1.6px solid var(--gold);
+  background:transparent;color:var(--gold);font-weight:700;font-size:13.5px;cursor:pointer;
+}
+.chip.on{background:var(--gold);color:var(--navy)}
+.punto{border-bottom:1px solid #edf0f5;padding:10px 0}
+.punto:last-child{border-bottom:0}
+.punto .nom{font-size:14px;font-weight:600;margin-bottom:7px}
+.punto .ops{display:flex;gap:7px}
+.est{
+  flex:1;padding:9px 4px;border-radius:9px;border:1.4px solid #ccd3de;
+  background:#f5f7fa;font-weight:700;font-size:13px;cursor:pointer;color:#5c6675;
+}
+.est.on-ok{background:var(--verde);border-color:var(--verde);color:#fff}
+.est.on-atn{background:var(--amarillo);border-color:var(--amarillo);color:#41320a}
+.est.on-mal{background:var(--rojo);border-color:var(--rojo);color:#fff}
+.punto .extra{margin-top:8px;display:none}
+.punto .extra.vis{display:block}
+.punto .extra textarea{min-height:52px;margin-bottom:6px}
+.niveles{display:flex;gap:7px}
+.niveles .est{padding:11px 2px}
+.est.on-niv{background:var(--navy);border-color:var(--navy);color:var(--gold)}
+.foto-slot{
+  display:block;border:2px dashed #b9c2d0;border-radius:11px;padding:12px;
+  text-align:center;color:#5c6675;font-size:13.5px;font-weight:600;cursor:pointer;
+  margin:7px 0;background:#f8fafc;
+}
+.foto-slot.ok{border-color:var(--verde);color:var(--verde);background:#f0faf3}
+.foto-slot img{max-width:100%;max-height:130px;border-radius:8px;display:block;margin:8px auto 0}
+.foto-slot input{display:none}
+canvas.firma{
+  width:100%;height:150px;border:2px dashed #b9c2d0;border-radius:11px;
+  background:#fff;touch-action:none;display:block;
+}
+.aviso{background:#fdf3d7;border-left:4px solid var(--amarillo);color:#5a4508;
+  padding:10px 12px;border-radius:8px;font-size:13px;margin:10px 0}
+.error-caja{background:#fbe9e7;border-left:4px solid var(--rojo);color:#7c1f14;
+  padding:10px 12px;border-radius:8px;font-size:13.5px;margin:10px 0;display:none}
+.error-caja.vis{display:block}
+.exito-icono{font-size:58px;text-align:center;margin:18px 0 4px}
+footer{
+  text-align:center;color:var(--gris);font-size:11.5px;padding:14px 0 26px;
+}
+footer .vers{color:var(--gold);font-weight:700}
+footer button{background:none;border:0;color:var(--gris);font-size:11px;text-decoration:underline;cursor:pointer;margin-top:6px}
+.overlay{
+  position:fixed;inset:0;background:rgba(11,31,58,.88);display:none;
+  align-items:center;justify-content:center;flex-direction:column;z-index:60;color:#fff;
+}
+.overlay.vis{display:flex}
+.spinner{
+  width:46px;height:46px;border-radius:50%;border:4px solid rgba(201,168,76,.25);
+  border-top-color:var(--gold);animation:gira .8s linear infinite;margin-bottom:16px;
+}
+@keyframes gira{to{transform:rotate(360deg)}}
+.enlace{background:none;border:0;color:var(--teal);font-weight:700;cursor:pointer;font-size:13.5px;text-decoration:underline;padding:0}
+.volver{background:none;border:0;color:var(--gold);font-weight:700;font-size:14px;cursor:pointer;padding:6px 0;margin-top:2px}
+.pill{display:inline-block;background:var(--navy);color:var(--gold);border-radius:14px;padding:3px 11px;font-size:12px;font-weight:700;margin-left:6px}
+.resp-bloque{border:1.5px solid #e2e7ef;border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}
+.resp-bloque h3{display:flex;align-items:center;justify-content:space-between}
+.check-linea{display:flex;align-items:flex-start;gap:10px;margin:12px 0;font-size:14px}
+.check-linea input{width:22px;height:22px;flex:none;margin-top:1px}
+code.mono{background:#eef1f6;color:var(--navy);padding:2px 6px;border-radius:6px;font-size:12.5px;word-break:break-all}
+</style>
+</head>
+<body>
+<header class="marca">
+  <div class="logo">F</div>
+  <div>
+    <small>SEGURIDAD PRIVADA</small>
+    <h1>Control de Flotilla</h1>
+  </div>
+</header>
+
+<main>
+  <!-- ============ LOGIN ============ -->
+  <section id="scr-login" class="pantalla">
+    <div class="card">
+      <h2>¿Quién eres?</h2>
+      <p class="sub">Elige cómo entrar. La app recordará tu elección en este teléfono.</p>
+      <button class="btn btn-oro" id="btn-jefe">Soy jefe de turno</button>
+      <p class="sub" style="text-align:center;margin:14px 0 4px">— o —</p>
+      <label class="eti">Usuario (coordinación / dirección)</label>
+      <input type="text" id="log-usuario" autocapitalize="none" autocomplete="username" placeholder="usuario">
+      <label class="eti">Contraseña</label>
+      <input type="password" id="log-pass" autocomplete="current-password" placeholder="contraseña">
+      <div class="error-caja" id="log-error"></div>
+      <button class="btn btn-navy" id="btn-login">Entrar</button>
+    </div>
+  </section>
+
+  <!-- ============ PORTAL ============ -->
+  <section id="scr-portal" class="pantalla">
+    <div class="card">
+      <h2>Unidades <span class="pill" id="portal-rol"></span></h2>
+      <p class="sub">Filtra por tipo y elige la unidad.</p>
+      <div class="chips" id="portal-chips"></div>
+      <div id="portal-lista"></div>
+      <button class="enlace" id="btn-salir" style="margin-top:10px">Cambiar de usuario</button>
+    </div>
+  </section>
+
+  <!-- ============ CONFIRMAR UNIDAD (QR) ============ -->
+  <section id="scr-confirma" class="pantalla">
+    <div class="card">
+      <h2>Confirma la unidad</h2>
+      <p class="sub">Verifica que la unidad frente a ti coincide con esta información:</p>
+      <div id="confirma-info"></div>
+      <button class="btn btn-oro" id="btn-confirma-si">Sí, es esta unidad</button>
+      <button class="btn btn-linea-navy" id="btn-confirma-no">No, elegir otra</button>
+    </div>
+  </section>
+
+  <!-- ============ ACCIONES ============ -->
+  <section id="scr-acciones" class="pantalla">
+    <button class="volver" id="btn-acc-volver">‹ Unidades</button>
+    <div class="card">
+      <div id="acciones-info"></div>
+      <h3 style="margin-top:14px">Registro de turno</h3>
+      <button class="btn btn-navy" data-form="cambio">Cambio de turno <small style="font-weight:400">(ambos jefes)</small></button>
+      <button class="btn btn-teal" data-form="toma">Toma <small style="font-weight:400">(sacar de reposo)</small></button>
+      <button class="btn btn-teal" data-form="devolucion">Devolución <small style="font-weight:400">(dejar en reposo)</small></button>
+      <h3 style="margin-top:16px">Mantenimiento preventivo</h3>
+      <button class="btn btn-oro" data-form="semanal">Revisión semanal</button>
+      <button class="btn btn-linea-navy" data-form="mensual">Revisión mensual 🔒</button>
+    </div>
+  </section>
+
+  <!-- ============ FORMULARIO ============ -->
+  <section id="scr-form" class="pantalla">
+    <button class="volver" id="btn-form-volver">‹ Cancelar</button>
+    <div id="form-cuerpo"></div>
+    <div class="error-caja" id="form-error"></div>
+    <button class="btn btn-oro" id="btn-enviar">Firmar y enviar registro</button>
+  </section>
+
+  <!-- ============ ÉXITO ============ -->
+  <section id="scr-exito" class="pantalla">
+    <div class="card">
+      <div class="exito-icono">✅</div>
+      <h2 style="text-align:center" id="exito-titulo">Registro enviado</h2>
+      <p class="sub" style="text-align:center" id="exito-detalle"></p>
+      <button class="btn btn-navy" id="btn-descargar-pdf">Descargar PDF</button>
+      <button class="btn btn-linea-navy" id="btn-otro">Hacer otro registro</button>
+    </div>
+  </section>
+
+  <!-- ============ GENERADOR DE HASH (admin, oculto) ============ -->
+  <section id="scr-hash" class="pantalla">
+    <button class="volver" id="btn-hash-volver">‹ Regresar</button>
+    <div class="card">
+      <h2>Generador de hash (admin)</h2>
+      <p class="sub">Para dar de alta o cambiar contraseñas: genera el hash y pégalo en <code class="mono">CRED_HASH</code> dentro de <code class="mono">index.html</code>. Las contraseñas nunca se guardan; solo su hash.</p>
+      <label class="eti">Usuario (minúsculas, sin acentos)</label>
+      <input type="text" id="hash-usuario" autocapitalize="none" placeholder="ej. gabriel">
+      <label class="eti">Contraseña nueva</label>
+      <input type="text" id="hash-pass" autocapitalize="none" placeholder="contraseña">
+      <button class="btn btn-navy" id="btn-hash-gen">Generar hash</button>
+      <div id="hash-salida" style="display:none">
+        <label class="eti">Resultado (cópialo al campo hash del usuario):</label>
+        <textarea id="hash-texto" readonly style="font-family:monospace;font-size:12px"></textarea>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <div id="overlay-texto">Generando PDF…</div>
+</div>
+
+<footer>
+  <span class="vers" id="pie-version"></span> · Control de Flotilla<br>
+  <button id="btn-admin-hash" title="Herramientas de administrador">🔑 Herramientas de admin</button>
+</footer>
+
+<script>
+'use strict';
+/* =====================================================================
+   CONFIGURACIÓN — edita esto antes de publicar
+   ===================================================================== */
+const APP_VERSION = 'v1.0.0';
+
+// URL de tu implementación web de Apps Script (termina en /exec)
+const APPS_SCRIPT_URL = 'PEGA_AQUI_LA_URL_DE_APPS_SCRIPT/exec';
+
+// OneSignal (push). Déjalo vacío ('') y la app funciona igual, sin push.
+const ONESIGNAL_APP_ID = '';
+
+// Credenciales: SOLO hashes SHA-256 de "usuario|contraseña".
+// Para generar nuevos usa el botón "🔑 Herramientas de admin" del pie.
+// Contraseña inicial de los tres usuarios: ver DESPLIEGUE.md (¡cámbiala!).
+const CRED_HASH = [
+  { usuario:'gabriel',  nombre:'Gabriel Gómezcésar',  rol:'coordinador_general',
+    hash:'33b728ff0ea87a822e369775a17796ec81f538d997f5d5fa3ef336963530142d' },
+  { usuario:'emiliano', nombre:'Emiliano Gómezcésar', rol:'coordinador_general',
+    hash:'dd81aaf78c648d84a9e33b80a3e72e4f9af92c38e7937f34108eaca74aff3779' },
+  { usuario:'othon',    nombre:'Othón Gómezcésar',    rol:'director',
+    hash:'c312919734bd41cb4332e78a2bfdc9c89c45cb72fd95452319a6f6fb344711f8' },
+];
+
+/* =====================================================================
+   DATOS DE LA FLOTA Y CHECKLISTS
+   ===================================================================== */
+const FLOTA = [
+  { codigo:'P-01',  desc:'Vento 2017',              ubicacion:'Lomas del Lago caseta 2',   placas:'' },
+  { codigo:'P-02',  desc:'Virtus 2023',             ubicacion:'Lomas del Lago caseta 1',   placas:'' },
+  { codigo:'P-03',  desc:'Virtus 2023',             ubicacion:'Cumbres del Lago',          placas:'' },
+  { codigo:'P-04',  desc:'Saveiro con caja',        ubicacion:'Cumbres del Lago',          placas:'' },
+  { codigo:'P-05',  desc:'Saveiro sin caja',        ubicacion:'Cumbres del Lago',          placas:'' },
+  { codigo:'P-06',  desc:'Virtus 2023 automático',  ubicacion:'Coordinador General',       placas:'' },
+  { codigo:'M-01',  desc:'Motocicleta',             ubicacion:'Lomas del Lago caseta 1',   placas:'' },
+  { codigo:'M-02',  desc:'Motocicleta',             ubicacion:'Lomas del Lago caseta 2',   placas:'' },
+  { codigo:'M-03',  desc:'Motocicleta',             ubicacion:'Balcones de Juriquilla',    placas:'' },
+  { codigo:'MP-01', desc:'Monopatín eléctrico',     ubicacion:'Real del Lago',             placas:'' },
+];
+
+// OJO: revisar 'MP-' antes que 'M-'
+function tipoDe(codigo){
+  if (codigo.startsWith('MP-')) return 'monopatin';
+  if (codigo.startsWith('M-'))  return 'moto';
+  return 'patrulla';
+}
+const TIPO_NOMBRE = { patrulla:'Patrulla', moto:'Motocicleta', monopatin:'Monopatín' };
+
+const CHECKLISTS = {
+  patrulla: {
+    diario: [
+      'Presión de llantas','Estado de llantas','Golpes / rayones','Vidrios',
+      'Limpieza interior','Daños interiores','Luces','Frenos','Torreta','Claxon',
+      'Radio','Refacción, llave y gato','Documentación','Nivel de aceite',
+      'Nivel de refrigerante','Testigos en tablero'
+    ],
+    semanal: [
+      'Presión de llantas','Nivel de aceite','Nivel de refrigerante','Líquido de frenos',
+      'Limpiaparabrisas','Estado de batería','Luces externas (cuartos/bajas/altas/direccionales)',
+      'Luces interiores','Torreta','Claxon','Golpes / rayones','Limpieza general','Documentos'
+    ],
+    mensual: [
+      'Servicio mayor por kilometraje','Filtro de aire','Filtro de aceite',
+      'Rotación de llantas','Alineación y balanceo','Bandas y poleas',
+      'Suspensión y amortiguadores','Terminales de batería','Fugas de fluidos',
+      'Extintor (carga y vigencia)'
+    ]
+  },
+  moto: {
+    diario: [
+      'Llanta delantera','Llanta trasera','Presión de llantas','Cadena',
+      'Golpes / rayones','Espejos','Cajuela','Equipo de cajuela','Luces','Frenos',
+      'Claxon','Acelerador y chicote','Documentación','Testigos en tablero'
+    ],
+    semanal: [
+      'Presión de llantas','Nivel de aceite','Cadena (tensión y lubricación)',
+      'Frenos (balatas y niveles)','Estado de batería',
+      'Luces (bajas/altas/direccionales/stop)','Claxon','Espejos',
+      'Golpes / rayones','Limpieza general','Documentos'
+    ],
+    mensual: [
+      'Cambio de aceite por kilometraje','Bujía','Filtro de aire',
+      'Kit de arrastre (desgaste)','Balatas (desgaste)','Terminales de batería',
+      'Rayos y rines','Fugas de fluidos'
+    ]
+  },
+  monopatin: {
+    diario: [
+      'Estado de batería','Conectado a carga','Golpes / rayones','Ruedas','Manubrio',
+      'Deck','Freno','Acelerador y chicote','Luces','Mecanismo de plegado','Cable de carga'
+    ],
+    semanal: [
+      'Carga y autonomía de batería','Desgaste de ruedas','Freno (calibración)',
+      'Luces y reflejantes','Mecanismo de plegado','Tornillería (apriete)',
+      'Limpieza general','Cable y cargador'
+    ],
+    mensual: [
+      'Estado de celdas / autonomía real','Rodamientos de ruedas',
+      'Cableado y conectores','Apriete general de tornillería',
+      'Actualización de firmware / app (si aplica)'
+    ]
+  }
+};
+
+const FOTOS_REQ = {
+  patrulla: ['Frente','Lateral izquierdo','Lateral derecho','Parte trasera'],
+  moto:     ['Frente','Lateral izquierdo','Lateral derecho'],
+  monopatin:['Vista general','Panel / batería']
+};
+
+const NIVELES = ['E','¼','½','¾','F'];
+
+const FORM_TITULOS = {
+  cambio:'Cambio de turno', toma:'Toma (sacar de reposo)', devolucion:'Devolución (dejar en reposo)',
+  semanal:'Mantenimiento semanal', mensual:'Mantenimiento mensual'
+};
+
+/* =====================================================================
+   UTILIDADES
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+
+async function sha256hex(txt){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Comprime una imagen a máx 1280 px por lado, JPEG calidad 0.6
+function comprimirImagen(file, maxDim=1280, calidad=0.6){
+  return new Promise((res, rej)=>{
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const esc = Math.min(1, maxDim / Math.max(w, h));
+      w = Math.max(1, Math.round(w*esc)); h = Math.max(1, Math.round(h*esc));
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(img.src);
+      res({ data: c.toDataURL('image/jpeg', calidad), w, h });
+    };
+    img.onerror = () => { URL.revokeObjectURL(img.src); rej(new Error('No se pudo leer la imagen')); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function ahoraTexto(){
+  return new Date().toLocaleString('es-MX', {dateStyle:'medium', timeStyle:'short'});
+}
+function marcaArchivo(){
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+}
+function esc(t){ return String(t??'').replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+/* =====================================================================
+   NAVEGACIÓN Y SESIÓN
+   ===================================================================== */
+let sesion = null;                       // {rol, nombre, usuario}
+let ctx = { unidad:null, tipoReg:null }; // unidad = objeto de FLOTA
+let pantallaPrevia = 'scr-portal';
+
+function mostrar(id){
+  document.querySelectorAll('.pantalla').forEach(p=>p.classList.remove('activa'));
+  $('#'+id).classList.add('activa');
+  window.scrollTo(0,0);
+}
+
+function guardarSesion(){ localStorage.setItem('fv_sesion', JSON.stringify(sesion)); }
+function cargarSesion(){
+  try { sesion = JSON.parse(localStorage.getItem('fv_sesion')) || null; } catch(e){ sesion = null; }
+}
+
+function iniciarApp(){
+  cargarSesion();
+  $('#pie-version').textContent = APP_VERSION;
+  if (sesion) entrarPortal(); else mostrar('scr-login');
+  reintentarPendientes();
+  iniciarOneSignal();
+}
+
+function entrarPortal(){
+  $('#portal-rol').textContent = sesion.rol === 'jefe' ? 'Jefe de turno'
+    : (sesion.rol === 'director' ? 'Director' : 'Coordinador') + ' · ' + sesion.nombre.split(' ')[0];
+  renderPortal();
+  // ¿Llegó por QR (?u=P-01)?
+  const u = new URLSearchParams(location.search).get('u');
+  const unidad = u && FLOTA.find(f => f.codigo.toUpperCase() === u.toUpperCase());
+  if (unidad){
+    ctx.unidad = unidad;
+    $('#confirma-info').innerHTML = infoUnidadHTML(unidad);
+    mostrar('scr-confirma');
+  } else {
+    mostrar('scr-portal');
+  }
+}
+
+/* ---------- Login ---------- */
+$('#btn-jefe').onclick = () => {
+  sesion = { rol:'jefe', nombre:'Jefe de turno', usuario:'' };
+  guardarSesion(); entrarPortal();
+};
+$('#btn-login').onclick = async () => {
+  const u = $('#log-usuario').value.trim().toLowerCase();
+  const p = $('#log-pass').value;
+  const err = $('#log-error');
+  err.classList.remove('vis');
+  if (!u || !p){ err.textContent = 'Escribe usuario y contraseña.'; err.classList.add('vis'); return; }
+  const h = await sha256hex(u + '|' + p);
+  const cred = CRED_HASH.find(c => c.usuario === u && c.hash === h);
+  if (!cred){ err.textContent = 'Usuario o contraseña incorrectos.'; err.classList.add('vis'); return; }
+  sesion = { rol:cred.rol, nombre:cred.nombre, usuario:cred.usuario };
+  guardarSesion();
+  $('#log-pass').value = '';
+  etiquetarOneSignal();
+  entrarPortal();
+};
+$('#btn-salir').onclick = () => {
+  localStorage.removeItem('fv_sesion'); sesion = null;
+  history.replaceState(null,'',location.pathname);
+  mostrar('scr-login');
+};
+
+/* ---------- Portal ---------- */
+let filtroTipo = 'todos';
+function renderPortal(){
+  const chips = [['todos','Todas'],['patrulla','Patrullas'],['moto','Motos'],['monopatin','Monopatín']];
+  $('#portal-chips').innerHTML = chips.map(([v,t]) =>
+    `<button class="chip ${filtroTipo===v?'on':''}" data-t="${v}">${t}</button>`).join('');
+  $('#portal-chips').querySelectorAll('.chip').forEach(b =>
+    b.onclick = () => { filtroTipo = b.dataset.t; renderPortal(); });
+  const lista = FLOTA.filter(f => filtroTipo==='todos' || tipoDe(f.codigo)===filtroTipo);
+  $('#portal-lista').innerHTML = lista.map(f => `
+    <div class="fila-unidad" data-c="${f.codigo}">
+      <div class="cod">${f.codigo}</div>
+      <div class="des"><b>${esc(f.desc)}</b><br>${esc(f.ubicacion)}${f.placas ? ' · Placas '+esc(f.placas):''}</div>
+    </div>`).join('');
+  $('#portal-lista').querySelectorAll('.fila-unidad').forEach(el =>
+    el.onclick = () => { ctx.unidad = FLOTA.find(f=>f.codigo===el.dataset.c); abrirAcciones(); });
+}
+
+function infoUnidadHTML(f){
+  return `<div style="border-left:5px solid var(--gold);padding-left:12px">
+    <div style="font-size:22px;font-weight:800;color:var(--navy)">${f.codigo}</div>
+    <div style="font-size:15px"><b>${esc(f.desc)}</b> · ${TIPO_NOMBRE[tipoDe(f.codigo)]}</div>
+    <div style="color:#5c6675;font-size:13.5px">📍 ${esc(f.ubicacion)}</div>
+    <div style="color:#5c6675;font-size:13.5px">Placas: ${f.placas ? esc(f.placas) : '<i>pendientes</i>'}</div>
+  </div>`;
+}
+
+$('#btn-confirma-si').onclick = () => abrirAcciones();
+$('#btn-confirma-no').onclick = () => { history.replaceState(null,'',location.pathname); mostrar('scr-portal'); };
+
+function abrirAcciones(){
+  $('#acciones-info').innerHTML = infoUnidadHTML(ctx.unidad);
+  mostrar('scr-acciones');
+}
+$('#btn-acc-volver').onclick = () => mostrar('scr-portal');
+document.querySelectorAll('#scr-acciones [data-form]').forEach(b =>
+  b.onclick = () => intentarAbrirFormulario(b.dataset.form));
+
+async function intentarAbrirFormulario(tipoReg){
+  if (tipoReg === 'mensual' && !(sesion && sesion.rol === 'coordinador_general')){
+    const u = prompt('Revisión mensual: solo Coordinación General.\nUsuario:');
+    if (u === null) return;
+    const p = prompt('Contraseña:');
+    if (p === null) return;
+    const h = await sha256hex(u.trim().toLowerCase() + '|' + p);
+    const cred = CRED_HASH.find(c => c.usuario === u.trim().toLowerCase() && c.hash === h && c.rol === 'coordinador_general');
+    if (!cred){ alert('Credenciales inválidas o sin permiso.'); return; }
+    ctx.mensualPor = cred.nombre;
+  } else {
+    ctx.mensualPor = sesion ? sesion.nombre : '';
+  }
+  abrirFormulario(tipoReg);
+}
+
+/* =====================================================================
+   COMPONENTES DE FORMULARIO
+   ===================================================================== */
+function crearFirma(canvas){
+  canvas.width = 600; canvas.height = 220;
+  const c = canvas.getContext('2d');
+  c.lineWidth = 3; c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = '#10233f';
+  let dib = false, trazos = false;
+  const pos = ev => {
+    const r = canvas.getBoundingClientRect();
+    const t = ev.touches ? ev.touches[0] : ev;
+    return { x:(t.clientX-r.left)*canvas.width/r.width, y:(t.clientY-r.top)*canvas.height/r.height };
+  };
+  const ini = ev => { dib = true; trazos = true; const p = pos(ev); c.beginPath(); c.moveTo(p.x,p.y); c.lineTo(p.x+0.5,p.y+0.5); c.stroke(); ev.preventDefault(); };
+  const mov = ev => { if(!dib) return; const p = pos(ev); c.lineTo(p.x,p.y); c.stroke(); ev.preventDefault(); };
+  const fin = () => { dib = false; };
+  canvas.addEventListener('mousedown', ini);
+  canvas.addEventListener('mousemove', mov);
+  window.addEventListener('mouseup', fin);
+  canvas.addEventListener('touchstart', ini, {passive:false});
+  canvas.addEventListener('touchmove', mov, {passive:false});
+  canvas.addEventListener('touchend', fin);
+  return {
+    limpiar(){ c.clearRect(0,0,canvas.width,canvas.height); trazos = false; },
+    vacia(){ return !trazos; },
+    data(){
+      // fondo blanco para el PDF
+      const cc = document.createElement('canvas'); cc.width = canvas.width; cc.height = canvas.height;
+      const g = cc.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,cc.width,cc.height); g.drawImage(canvas,0,0);
+      return cc.toDataURL('image/png');
+    }
+  };
+}
+
+function fotoSlotHTML(id, titulo, camara){ // camara: 'user' (selfie) | 'environment'
+  return `<label class="foto-slot" id="slot-${id}">
+    📷 ${esc(titulo)}
+    <input type="file" accept="image/*" capture="${camara}" data-foto="${id}">
+  </label>`;
+}
+function conectarFotos(cont, F){
+  cont.querySelectorAll('input[data-foto]').forEach(inp => {
+    inp.addEventListener('change', async () => {
+      if (!inp.files || !inp.files[0]) return;
+      const slot = inp.closest('.foto-slot');
+      try {
+        const img = await comprimirImagen(inp.files[0]);
+        F.fotos[inp.dataset.foto] = img;
+        slot.classList.add('ok');
+        let th = slot.querySelector('img');
+        if (!th){ th = document.createElement('img'); slot.appendChild(th); }
+        th.src = img.data;
+      } catch(e){ alert('No se pudo procesar la foto. Intenta de nuevo.'); }
+    });
+  });
+}
+
+/* =====================================================================
+   CONSTRUCCIÓN DEL FORMULARIO
+   ===================================================================== */
+let F = null; // estado del formulario activo
+
+function abrirFormulario(tipoReg){
+  const u  = ctx.unidad;
+  const tv = tipoDe(u.codigo);
+  const esMant   = (tipoReg === 'semanal' || tipoReg === 'mensual');
+  const esCambio = tipoReg === 'cambio';
+  const puntos = tipoReg === 'mensual'
+    ? [...CHECKLISTS[tv].semanal, ...CHECKLISTS[tv].mensual]
+    : (tipoReg === 'semanal' ? CHECKLISTS[tv].semanal : CHECKLISTS[tv].diario);
+  const conKm  = tv !== 'monopatin';
+  const conGas = !esMant;
+
+  F = { tipoReg, puntos, estados:{}, notas:{}, fotos:{}, firmas:{}, nombres:{}, conforme:false };
+
+  let html = `<div class="card"><h2>${FORM_TITULOS[tipoReg]}</h2>
+    <p class="sub">${u.codigo} · ${esc(u.desc)} · ${esc(u.ubicacion)}</p></div>`;
+
+  /* ---- Responsables ---- */
+  if (esCambio){
+    html += `<div class="card"><h2>Jefes de turno</h2>
+      <p class="sub">Ambos jefes deben estar presentes. Cada uno registra nombre, selfie y firma.</p>
+      ${bloqueResponsable('entrega','Jefe que ENTREGA')}
+      ${bloqueResponsable('recibe','Jefe que RECIBE')}
+      <div class="check-linea">
+        <input type="checkbox" id="chk-conforme">
+        <span><b>Ambos jefes están conformes</b> con el estado de la unidad tal como quedó descrito en este registro.</span>
+      </div>
+    </div>`;
+  } else {
+    const titulo = esMant
+      ? (tipoReg === 'mensual' ? 'Responsable (Coordinación General)' : 'Jefe de turno responsable')
+      : 'Responsable';
+    html += `<div class="card"><h2>${titulo}</h2>
+      ${bloqueResponsable('resp','', tipoReg === 'mensual' ? ctx.mensualPor : '')}
+    </div>`;
+  }
+
+  /* ---- Datos de la unidad ---- */
+  if (conKm || conGas){
+    html += `<div class="card"><h2>Datos de la unidad</h2>`;
+    if (conKm) html += `<label class="eti">Kilometraje actual</label>
+      <input type="number" id="inp-km" inputmode="numeric" min="0" placeholder="ej. 45230">`;
+    if (conGas){
+      const eti = tv === 'monopatin' ? 'Nivel de batería' : 'Nivel de gasolina';
+      html += `<label class="eti">${eti}</label><div class="niveles" id="sel-nivel">
+        ${NIVELES.map(n=>`<button type="button" class="est" data-niv="${n}">${n}</button>`).join('')}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  /* ---- Checklist ---- */
+  html += `<div class="card"><h2>Checklist · ${TIPO_NOMBRE[tv]}</h2>
+    <p class="sub">Marca cada punto. Si es <b>Atención</b> o <b>Mal</b>, describe el problema (foto opcional).</p>
+    ${puntos.map((p,i)=>`
+      <div class="punto" data-i="${i}">
+        <div class="nom">${i+1}. ${esc(p)}</div>
+        <div class="ops">
+          <button type="button" class="est" data-e="OK">OK</button>
+          <button type="button" class="est" data-e="Atención">Atención</button>
+          <button type="button" class="est" data-e="Mal">Mal</button>
+        </div>
+        <div class="extra">
+          <textarea placeholder="Describe el problema (obligatorio)" data-nota="${i}"></textarea>
+          ${fotoSlotHTML('punto-'+i,'Foto del punto (opcional)','environment')}
+        </div>
+      </div>`).join('')}
+  </div>`;
+
+  /* ---- Fotos obligatorias de la unidad (solo registro diario) ---- */
+  if (!esMant){
+    html += `<div class="card"><h2>Fotos de la unidad <span style="color:var(--rojo)">*</span></h2>
+      <p class="sub">Obligatorias. Se comprimen automáticamente antes de enviarse.</p>
+      ${FOTOS_REQ[tv].map((t,i)=>fotoSlotHTML('req-'+i, t, 'environment')).join('')}
+    </div>`;
+  }
+
+  /* ---- Observaciones ---- */
+  html += `<div class="card"><h2>Observaciones</h2>
+    <textarea id="inp-obs" placeholder="Observaciones generales (opcional)"></textarea>
+  </div>`;
+
+  const cuerpo = $('#form-cuerpo');
+  cuerpo.innerHTML = html;
+  $('#form-error').classList.remove('vis');
+
+  /* Conexiones */
+  cuerpo.querySelectorAll('.punto').forEach(div => {
+    const i = +div.dataset.i;
+    div.querySelectorAll('.ops .est').forEach(btn => {
+      btn.onclick = () => {
+        F.estados[i] = btn.dataset.e;
+        div.querySelectorAll('.ops .est').forEach(b=>b.className='est');
+        btn.classList.add(btn.dataset.e==='OK'?'on-ok':btn.dataset.e==='Atención'?'on-atn':'on-mal');
+        div.querySelector('.extra').classList.toggle('vis', btn.dataset.e!=='OK');
+      };
+    });
+    const ta = div.querySelector('textarea');
+    ta.addEventListener('input', ()=>{ F.notas[i] = ta.value.trim(); });
+  });
+  const selNivel = $('#sel-nivel');
+  if (selNivel) selNivel.querySelectorAll('.est').forEach(b => {
+    b.onclick = () => {
+      F.nivel = b.dataset.niv;
+      selNivel.querySelectorAll('.est').forEach(x=>x.className='est');
+      b.classList.add('on-niv');
+    };
+  });
+  const chk = $('#chk-conforme');
+  if (chk) chk.onchange = () => { F.conforme = chk.checked; };
+  conectarFotos(cuerpo, F);
+  cuerpo.querySelectorAll('canvas.firma').forEach(cv => {
+    F.firmas[cv.dataset.firma] = crearFirma(cv);
+    cuerpo.querySelector(`[data-limpiar="${cv.dataset.firma}"]`).onclick =
+      () => F.firmas[cv.dataset.firma].limpiar();
+  });
+  cuerpo.querySelectorAll('input[data-nombre]').forEach(inp =>
+    inp.addEventListener('input', ()=>{ F.nombres[inp.dataset.nombre] = inp.value.trim(); }));
+  cuerpo.querySelectorAll('select[data-cargo]').forEach(sel =>
+    { F.cargo = sel.value; sel.onchange = () => { F.cargo = sel.value; }; });
+
+  mostrar('scr-form');
+}
+
+function bloqueResponsable(id, titulo, nombreFijo=''){
+  return `<div class="resp-bloque">
+    ${titulo ? `<h3>${titulo}</h3>` : ''}
+    <label class="eti">Nombre completo</label>
+    <input type="text" data-nombre="${id}" placeholder="Nombre y apellidos" value="${esc(nombreFijo)}" ${nombreFijo?'readonly':''}>
+    ${id==='resp' ? `<label class="eti">Cargo</label>
+    <select data-cargo>
+      <option>Jefe de turno</option><option>Coordinador</option>
+      <option>Guardia</option><option>Otro</option>
+    </select>`:''}
+    ${fotoSlotHTML('selfie-'+id,'Selfie (cámara frontal)','user')}
+    <label class="eti">Firma</label>
+    <canvas class="firma" data-firma="${id}"></canvas>
+    <button type="button" class="btn btn-linea-navy btn-chico" data-limpiar="${id}">Borrar firma</button>
+  </div>`;
+}
+
+$('#btn-form-volver').onclick = () => { if(confirm('¿Cancelar este registro? Se perderán los datos.')) mostrar('scr-acciones'); };
+
+/* =====================================================================
+   VALIDACIÓN
+   ===================================================================== */
+function validar(){
+  const u = ctx.unidad, tv = tipoDe(u.codigo);
+  const esMant = ['semanal','mensual'].includes(F.tipoReg);
+  const esCambio = F.tipoReg === 'cambio';
+  const faltas = [];
+
+  const resps = esCambio ? ['entrega','recibe'] : ['resp'];
+  resps.forEach(r => {
+    const eti = esCambio ? (r==='entrega'?'jefe que entrega':'jefe que recibe') : 'responsable';
+    if (!F.nombres[r]) faltas.push('Nombre del ' + eti);
+    if (!F.fotos['selfie-'+r]) faltas.push('Selfie del ' + eti);
+    if (!F.firmas[r] || F.firmas[r].vacia()) faltas.push('Firma del ' + eti);
+  });
+  if (esCambio && !F.conforme) faltas.push('Confirmación de conformidad de ambos jefes');
+
+  if (tv !== 'monopatin'){
+    const km = $('#inp-km') ? $('#inp-km').value.trim() : '';
+    if (km === '' || isNaN(+km) || +km < 0) faltas.push('Kilometraje válido');
+    else F.km = Math.round(+km);
+  }
+  if (!esMant && !F.nivel) faltas.push(tv==='monopatin' ? 'Nivel de batería' : 'Nivel de gasolina');
+
+  F.puntos.forEach((p,i) => {
+    if (!F.estados[i]) faltas.push('Checklist: ' + p);
+    else if (F.estados[i] !== 'OK' && !F.notas[i]) faltas.push('Descripción del problema en: ' + p);
+  });
+
+  if (!esMant){
+    FOTOS_REQ[tv].forEach((t,i) => { if (!F.fotos['req-'+i]) faltas.push('Foto: ' + t); });
+  }
+  return faltas;
+}
+
+/* =====================================================================
+   PDF (jsPDF)
+   ===================================================================== */
+async function asegurarJsPDF(){
+  if (window.jspdf && window.jspdf.jsPDF) return true;
+  await new Promise(res => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = res; s.onerror = res;
+    document.head.appendChild(s);
+  });
+  return !!(window.jspdf && window.jspdf.jsPDF);
+}
+
+function generarPDF(d){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const W = 210, M = 12, BOT = 282;
+  let y;
+
+  const salto = (alto=8) => { if (y + alto > BOT){ doc.addPage(); y = 16; } };
+  const encabezado = () => {
+    doc.setFillColor(11,31,58); doc.rect(0,0,W,24,'F');
+    doc.setTextColor(201,168,76); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+    doc.text('CONTROL DE FLOTILLA', M, 10);
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    doc.text(`${d.titulo}  ·  ${d.unidad}  ·  ${d.fechaTexto}`, M, 18);
+    y = 31;
+  };
+  encabezado();
+
+  /* Datos generales */
+  doc.setTextColor(30,37,54);
+  const linea = (k,v) => {
+    salto(6);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.text(k+':', M, y);
+    doc.setFont('helvetica','normal');
+    const tx = doc.splitTextToSize(String(v||'—'), W - M*2 - 46);
+    doc.text(tx, M+46, y);
+    y += 5 * tx.length + 1;
+  };
+  linea('Unidad', `${d.unidad} — ${d.desc} (${d.tipoVehiculo})`);
+  linea('Ubicación', d.ubicacion);
+  linea('Placas', d.placas || 'pendientes');
+  d.lineasResp.forEach(([k,v]) => linea(k,v));
+  if (d.km !== undefined && d.km !== null && d.km !== '') linea('Kilometraje', d.km + ' km');
+  if (d.nivel) linea(d.etiquetaNivel, d.nivel);
+
+  /* Checklist */
+  y += 3; salto(12);
+  doc.setFillColor(201,168,76); doc.rect(M, y-4.5, W-2*M, 7, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(11,31,58);
+  doc.text('CHECKLIST', M+2, y); y += 7;
+  const colores = { 'OK':[39,174,96], 'Atención':[225,177,44], 'Mal':[192,57,43] };
+  d.checklist.forEach((c,idx) => {
+    salto(8);
+    doc.setDrawColor(228,232,238); doc.line(M, y+2.4, W-M, y+2.4);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,37,54);
+    doc.text(`${idx+1}. ${c.punto}`, M+1, y);
+    const col = colores[c.estado] || [120,120,120];
+    doc.setFillColor(col[0],col[1],col[2]);
+    doc.roundedRect(W-M-24, y-3.6, 24, 5.4, 1.4, 1.4, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    doc.text(c.estado, W-M-12, y, {align:'center'});
+    y += 6;
+    if (c.nota){
+      doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(90,90,90);
+      const tn = doc.splitTextToSize('Nota: ' + c.nota, W-2*M-8);
+      salto(4*tn.length); doc.text(tn, M+4, y); y += 4*tn.length + 1;
+    }
+  });
+
+  /* Observaciones */
+  if (d.observaciones){
+    y += 4; salto(14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(11,31,58);
+    doc.text('OBSERVACIONES', M, y); y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,37,54);
+    const to = doc.splitTextToSize(d.observaciones, W-2*M);
+    salto(4.2*to.length); doc.text(to, M, y); y += 4.2*to.length + 2;
+  }
+
+  /* Fotos */
+  const agregarFotos = (titulo, fotos) => {
+    if (!fotos.length) return;
+    y += 4; salto(14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(11,31,58);
+    doc.text(titulo.toUpperCase(), M, y); y += 4;
+    const cw = (W - 2*M - 6) / 2;
+    let colIzq = true, filaAlto = 0;
+    fotos.forEach(f => {
+      const r = f.img.h / f.img.w;
+      let iw = cw, ih = cw * r;
+      if (ih > 74){ ih = 74; iw = ih / r; }
+      const bloque = ih + 9;
+      if (colIzq && y + bloque > BOT){ doc.addPage(); y = 16; }
+      if (!colIzq && y + bloque > BOT){ colIzq = true; y += filaAlto; if (y + bloque > BOT){ doc.addPage(); y = 16; } }
+      const x = colIzq ? M : M + cw + 6;
+      doc.addImage(f.img.data, 'JPEG', x, y, iw, ih);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(90,90,90);
+      doc.text(f.titulo, x, y + ih + 4);
+      if (colIzq){ filaAlto = bloque; colIzq = false; }
+      else { y += Math.max(filaAlto, bloque); colIzq = true; filaAlto = 0; }
+    });
+    if (!colIzq) y += filaAlto;
+  };
+  agregarFotos('Fotos de la unidad', d.fotosUnidad);
+  agregarFotos('Fotos de puntos con problema', d.fotosPuntos);
+  agregarFotos('Selfies de responsables', d.selfies);
+
+  /* Firmas */
+  if (d.firmas.length){
+    y += 6; salto(46);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(11,31,58);
+    doc.text('FIRMAS', M, y); y += 4;
+    const cw = (W - 2*M - 6) / 2;
+    d.firmas.forEach((f,i) => {
+      const x = (i % 2 === 0) ? M : M + cw + 6;
+      if (i % 2 === 0){ salto(38); }
+      doc.setDrawColor(180,187,199); doc.rect(x, y, cw, 26);
+      doc.addImage(f.data, 'PNG', x+2, y+2, cw-4, 22);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(30,37,54);
+      doc.text(f.nombre, x + cw/2, y + 31, {align:'center'});
+      if (i % 2 === 1) y += 36;
+    });
+    if (d.firmas.length % 2 === 1) y += 36;
+  }
+
+  /* Pie en todas las páginas */
+  const total = doc.getNumberOfPages();
+  for (let i=1; i<=total; i++){
+    doc.setPage(i);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(140,147,163);
+    doc.text(`Control de Flotilla ${APP_VERSION} · ${d.fechaTexto} · pág. ${i}/${total}`, W/2, 291, {align:'center'});
+  }
+  return doc;
+}
+
+/* =====================================================================
+   ENVÍO (no-cors, éxito optimista + cola de reintento)
+   ===================================================================== */
+async function enviarAlServidor(payloadStr){
+  await fetch(APPS_SCRIPT_URL, {
+    method:'POST',
+    mode:'no-cors',                       // Safari iOS: jamás leer la respuesta
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+    body: payloadStr
+  });
+}
+
+function encolarPendiente(payloadStr){
+  try {
+    if (payloadStr.length > 3_500_000) return false; // demasiado grande para localStorage
+    const cola = JSON.parse(localStorage.getItem('fv_pendientes') || '[]');
+    cola.push(payloadStr);
+    localStorage.setItem('fv_pendientes', JSON.stringify(cola));
+    return true;
+  } catch(e){ return false; }
+}
+
+async function reintentarPendientes(){
+  let cola;
+  try { cola = JSON.parse(localStorage.getItem('fv_pendientes') || '[]'); } catch(e){ return; }
+  if (!cola.length) return;
+  const resto = [];
+  for (const p of cola){
+    try { await enviarAlServidor(p); }
+    catch(e){ resto.push(p); }
+  }
+  localStorage.setItem('fv_pendientes', JSON.stringify(resto));
+}
+
+/* =====================================================================
+   SUBMIT
+   ===================================================================== */
+let ultimoPDF = null;
+
+$('#btn-enviar').onclick = async () => {
+  const errCaja = $('#form-error');
+  errCaja.classList.remove('vis');
+  const faltas = validar();
+  if (faltas.length){
+    errCaja.innerHTML = '<b>Faltan datos:</b><br>· ' + faltas.slice(0,8).map(esc).join('<br>· ')
+      + (faltas.length>8 ? `<br>· … y ${faltas.length-8} más` : '');
+    errCaja.classList.add('vis');
+    errCaja.scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  const overlay = $('#overlay');
+  overlay.classList.add('vis');
+  $('#overlay-texto').textContent = 'Generando PDF…';
+  $('#btn-enviar').disabled = true;
+
+  try {
+    if (!await asegurarJsPDF()) throw new Error('No se pudo cargar el generador de PDF. Revisa tu conexión e intenta de nuevo.');
+
+    const u = ctx.unidad, tv = tipoDe(u.codigo);
+    const esMant = ['semanal','mensual'].includes(F.tipoReg);
+    const esCambio = F.tipoReg === 'cambio';
+    const obs = $('#inp-obs') ? $('#inp-obs').value.trim() : '';
+
+    const checklist = F.puntos.map((p,i) => ({
+      punto:p, estado:F.estados[i], nota:F.estados[i]!=='OK' ? (F.notas[i]||'') : ''
+    }));
+    const detalles = checklist.filter(c=>c.estado!=='OK')
+      .map(c=>`${c.punto}: ${c.estado} — ${c.nota}`).join(' | ');
+    const alertas = [];
+    const males = checklist.filter(c=>c.estado==='Mal').map(c=>c.punto);
+    if (males.length) alertas.push('Puntos en MAL: ' + males.join(', '));
+
+    // Responsables → columnas entrega/recibe
+    let jefeEntrega='', jefeRecibe='', responsable='';
+    if (esCambio){ jefeEntrega = F.nombres.entrega; jefeRecibe = F.nombres.recibe; }
+    else if (F.tipoReg === 'toma'){ jefeEntrega = '(en reposo)'; jefeRecibe = F.nombres.resp; }
+    else if (F.tipoReg === 'devolucion'){ jefeEntrega = F.nombres.resp; jefeRecibe = '(a reposo)'; }
+    else responsable = F.nombres.resp;
+
+    const lineasResp = esCambio
+      ? [['Jefe entrega', jefeEntrega], ['Jefe recibe', jefeRecibe], ['Conformidad','Ambos jefes conformes']]
+      : (esMant ? [['Responsable', responsable], ['Cargo', F.cargo || '']]
+                : [['Jefe entrega', jefeEntrega], ['Jefe recibe', jefeRecibe], ['Cargo', F.cargo || '']]);
+
+    const fotosUnidad = esMant ? [] :
+      FOTOS_REQ[tv].map((t,i)=>({titulo:t, img:F.fotos['req-'+i]})).filter(f=>f.img);
+    const fotosPuntos = F.puntos.map((p,i)=>({titulo:p, img:F.fotos['punto-'+i]})).filter(f=>f.img);
+    const selfies = (esCambio?['entrega','recibe']:['resp'])
+      .map(r=>({titulo:(esCambio?(r==='entrega'?'Entrega: ':'Recibe: '):'') + F.nombres[r], img:F.fotos['selfie-'+r]}))
+      .filter(f=>f.img);
+    const firmas = (esCambio?['entrega','recibe']:['resp'])
+      .map(r=>({nombre:F.nombres[r], data:F.firmas[r].data()}));
+
+    const fechaTexto = ahoraTexto();
+    const doc = generarPDF({
+      titulo: FORM_TITULOS[F.tipoReg], unidad:u.codigo, desc:u.desc,
+      tipoVehiculo: TIPO_NOMBRE[tv], ubicacion:u.ubicacion, placas:u.placas,
+      fechaTexto, lineasResp, km:F.km, nivel:F.nivel,
+      etiquetaNivel: tv==='monopatin' ? 'Batería' : 'Gasolina',
+      checklist, observaciones:obs, fotosUnidad, fotosPuntos, selfies, firmas
+    });
+
+    const nombrePDF = `${u.codigo}_${F.tipoReg}_${marcaArchivo()}.pdf`;
+    ultimoPDF = { doc, nombre:nombrePDF };
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+
+    const payload = {
+      version: APP_VERSION,
+      kind: esMant ? 'mantenimiento' : 'diario',
+      fechaISO: new Date().toISOString(),
+      unidad: u.codigo, tipoVehiculo: tv,
+      modo: FORM_TITULOS[F.tipoReg],
+      tipoMant: esMant ? (F.tipoReg==='semanal' ? 'Semanal' : 'Mensual') : '',
+      jefeEntrega, jefeRecibe, responsable,
+      cargo: esCambio ? 'Jefe de turno' : (esMant ? (F.tipoReg==='mensual'?'Coordinación General':'Jefe de turno') : (F.cargo||'')),
+      km: F.km ?? '', nivel: F.nivel || '',
+      checklist, observaciones: obs, detalles, alertas,
+      pdfNombre: nombrePDF, pdfBase64
+    };
+
+    $('#overlay-texto').textContent = 'Enviando registro…';
+    const payloadStr = JSON.stringify(payload);
+    let encolado = false;
+    try {
+      await enviarAlServidor(payloadStr);
+    } catch(e){
+      encolado = encolarPendiente(payloadStr);
+      if (!encolado){
+        throw new Error('Sin conexión y el registro es muy grande para guardarse localmente. Descarga el PDF y reintenta cuando tengas señal.');
+      }
+    }
+
+    $('#exito-titulo').textContent = encolado ? 'Guardado, pendiente de envío' : 'Registro enviado';
+    $('#exito-detalle').textContent = encolado
+      ? 'No hay conexión. El registro quedó guardado en este teléfono y se enviará automáticamente al abrir la app con internet.'
+      : `${FORM_TITULOS[F.tipoReg]} de ${u.codigo} — ${fechaTexto}. El PDF y la fila en el sistema se procesan en segundos.`;
+    history.replaceState(null,'',location.pathname);
+    mostrar('scr-exito');
+  } catch(e){
+    errCaja.textContent = e.message || 'Ocurrió un error. Intenta de nuevo.';
+    errCaja.classList.add('vis');
+    if (ultimoPDF){ /* deja descargar aunque falle el envío */ }
+  } finally {
+    overlay.classList.remove('vis');
+    $('#btn-enviar').disabled = false;
+  }
+};
+
+$('#btn-descargar-pdf').onclick = () => { if (ultimoPDF) ultimoPDF.doc.save(ultimoPDF.nombre); };
+$('#btn-otro').onclick = () => mostrar('scr-portal');
+
+/* =====================================================================
+   GENERADOR DE HASH (pantalla admin — solo por botón, nunca por URL)
+   ===================================================================== */
+$('#btn-admin-hash').onclick = () => {
+  pantallaPrevia = document.querySelector('.pantalla.activa')?.id || 'scr-login';
+  mostrar('scr-hash');
+};
+$('#btn-hash-volver').onclick = () => mostrar(pantallaPrevia);
+$('#btn-hash-gen').onclick = async () => {
+  const u = $('#hash-usuario').value.trim().toLowerCase();
+  const p = $('#hash-pass').value;
+  if (!u || !p){ alert('Escribe usuario y contraseña.'); return; }
+  const h = await sha256hex(u + '|' + p);
+  $('#hash-texto').value = `{ usuario:'${u}', nombre:'NOMBRE COMPLETO', rol:'coordinador_general', hash:'${h}' },`;
+  $('#hash-salida').style.display = 'block';
+};
+
+/* =====================================================================
+   ONESIGNAL (opcional — solo si está configurado)
+   ===================================================================== */
+function iniciarOneSignal(){
+  if (!ONESIGNAL_APP_ID) return;                    // sin configurar: no estorba
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  const s = document.createElement('script');
+  s.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+  s.defer = true;
+  document.head.appendChild(s);
+  window.OneSignalDeferred.push(async (OneSignal) => {
+    try {
+      await OneSignal.init({
+        appId: ONESIGNAL_APP_ID,
+        serviceWorkerParam: { scope: './push/' },
+        serviceWorkerPath: 'OneSignalSDKWorker.js'
+      });
+      etiquetarOneSignal();
+    } catch(e){ /* la app sigue funcionando sin push */ }
+  });
+}
+function etiquetarOneSignal(){
+  if (!ONESIGNAL_APP_ID || !window.OneSignalDeferred) return;
+  window.OneSignalDeferred.push(async (OneSignal) => {
+    try {
+      const rol = (sesion && sesion.rol !== 'jefe') ? 'coordinador' : 'jefe';
+      await OneSignal.User.addTag('rol', rol);
+    } catch(e){}
+  });
+}
+
+/* =====================================================================
+   SERVICE WORKER
+   ===================================================================== */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+iniciarApp();
+
+</script>
+</body>
+</html>
